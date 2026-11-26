@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>스포츠 점프 & 퀴즈 챌린지 | 고2 체육 아이스브레이킹</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    .font-title {
+      font-family: 'Black Han Sans', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .game-container {
+      width: 100%;
+      max-width: 960px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #38bdf8;
+      cursor: pointer;
+    }
+    .char-card {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .char-card:hover {
+      transform: translateY(-4px);
+    }
+    .char-card.selected {
+      border-color: #facc15;
+      background: rgba(250, 204, 21, 0.14);
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.35);
+      transform: translateY(-4px);
+    }
+    @keyframes pulseFast {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .animate-pulse-fast {
+      animation: pulseFast 0.9s infinite;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .pop-in {
+      animation: popIn 0.25s ease-out forwards;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="p-2 sm:p-4">
+
+  <div class="game-container">
+    <!-- 상단 바 -->
+    <header class="bg-slate-900/95 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="bg-amber-400 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full">고2 체육</span>
+        <h1 class="font-title text-lg sm:text-2xl text-white tracking-wide">스포츠 점프 & 퀴즈 챌린지</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btn-open-ranking" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/40 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+          <span>🏆</span>
+          <span>전체 순위 보기</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 1. 로비 화면 (닉네임 & 캐릭터 선택) -->
+    <section id="screen-lobby" class="p-5 sm:p-8">
+      <div class="text-center mb-6">
+        <p class="text-amber-400 font-bold text-sm mb-1">FIRST DAY ICE-BREAKING</p>
+        <h2 class="font-title text-2xl sm:text-4xl text-white mb-2">트랙을 달리고, 순발력과 스포츠 상식을 증명하라!</h2>
+        <p class="text-slate-300 text-xs sm:text-sm max-w-xl mx-auto">
+          장애물을 피해 달리다 <b>미션 게이트</b>를 통과하면 <b>순발력 테스트</b> 또는 <b>스포츠 상식 퀴즈</b> 중 하나가 랜덤 출제됩니다!
+        </p>
+      </div>
+
+      <!-- 닉네임 입력 -->
+      <div class="max-w-md mx-auto mb-6">
+        <label for="input-nickname" class="block text-xs font-bold text-slate-300 mb-1.5">학번 및 이름 (또는 닉네임)</label>
+        <div class="flex gap-2">
+          <input id="input-nickname" type="text" maxlength="14" placeholder="예: 20315 김체육"
+            class="flex-1 bg-slate-900 border-2 border-slate-600 focus:border-amber-400 rounded-xl px-4 py-3 text-white font-bold outline-none transition" />
+          <button id="btn-random-nick" type="button" title="랜덤 닉네임 생성"
+            class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-3.5 py-3 rounded-xl text-xs sm:text-sm transition whitespace-nowrap">
+            🎲 랜덤
+          </button>
+        </div>
+        <p id="nick-error" class="text-rose-400 text-xs mt-1.5 hidden font-semibold">닉네임이나 학번·이름을 먼저 입력해주세요!</p>
+      </div>
+
+      <!-- 귀여운 동물 캐릭터 선택 -->
+      <div class="mb-7">
+        <p class="text-center text-xs font-bold text-slate-300 mb-3">출전할 동물 선수를 선택하세요</p>
+        <div id="character-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- JS로 렌더링 -->
+        </div>
+      </div>
+
+      <!-- 게임 규칙 요약 -->
+      <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl">🦘</span>
+          <div>
+            <p class="font-bold text-white">1. 점프 & 2단 점프</p>
+            <p class="text-slate-400"><b>스페이스바</b> 또는 <b>화면 클릭</b>으로 허들과 공을 피하세요. (목숨 5개)</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl">🎲</span>
+          <div>
+            <p class="font-bold text-white">2. 예측 불가 랜덤 미션</p>
+            <p class="text-slate-400">게이트 진입 시 <b>순발력 테스트</b> 또는 <b>스포츠 퀴즈</b> 중 1개가 랜덤 출제!</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl">🏆</span>
+          <div>
+            <p class="font-bold text-white">3. 구글 시트 실시간 랭킹</p>
+            <p class="text-slate-400">게임 종료 후 점수가 자동 등록되어 전체 순위에서 비교할 수 있어요.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button id="btn-start-game"
+          class="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-title text-xl sm:text-2xl px-12 py-4 rounded-2xl shadow-lg shadow-orange-500/25 transition transform hover:scale-105 active:scale-95">
+          🏁 경기 시작하기!
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. 인게임 화면 -->
+    <section id="screen-game" class="hidden relative">
+      <!-- 상단 HUD -->
+      <div class="bg-slate-900/95 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 text-xs sm:text-sm">
+        <div class="flex items-center gap-2">
+          <span id="hud-char-badge" class="bg-slate-800 border border-slate-600 px-2.5 py-1 rounded-lg font-bold text-amber-300"></span>
+          <span id="hud-nickname" class="font-bold text-white"></span>
+        </div>
+
+        <div class="flex items-center gap-3 sm:gap-5">
+          <div class="flex items-center gap-1" title="남은 라이프 (최대 5개)">
+            <span id="hud-hearts" class="text-sm sm:text-base tracking-tight">❤️❤️❤️❤️❤️</span>
+          </div>
+          <div class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+            <span class="text-slate-400 text-xs mr-1">STAGE</span>
+            <span id="hud-stage" class="font-black text-emerald-400">1</span>
+          </div>
+          <div class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+            <span class="text-slate-400 text-xs mr-1">SCORE</span>
+            <span id="hud-score" class="font-black text-amber-400">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 캔버스 영역 -->
+      <div class="relative">
+        <canvas id="gameCanvas" width="960" height="420"></canvas>
+
+        <!-- 모바일/마우스 점프 보조 안내 -->
+        <div class="absolute bottom-3 right-3 bg-slate-900/75 backdrop-blur-sm text-slate-200 text-xs px-3 py-1.5 rounded-full pointer-events-none border border-slate-700">
+          클릭 / 터치 / Space : 점프 (공중 2단 점프)
+        </div>
+
+        <!-- 게이트 룰렛 연출 오버레이 -->
+        <div id="overlay-roulette" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-20">
+          <div class="bg-slate-900 border-2 border-amber-400 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl pop-in">
+            <p class="text-amber-400 font-bold text-xs tracking-widest mb-2">MISSION GATE</p>
+            <h3 class="font-title text-2xl text-white mb-4">랜덤 미션 추첨 중...</h3>
+            <div id="roulette-box" class="bg-slate-800 border-2 border-slate-600 rounded-xl py-6 px-4 mb-3">
+              <div id="roulette-icon" class="text-5xl mb-2">⚡</div>
+              <div id="roulette-label" class="font-title text-xl text-amber-300">순발력 테스트</div>
+            </div>
+            <p class="text-slate-400 text-xs">잠시 후 미션이 바로 시작됩니다!</p>
+          </div>
+        </div>
+
+        <!-- 미션 오버레이 A: 순발력 테스트 -->
+        <div id="overlay-reaction" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-20">
+          <div class="bg-slate-900 border-2 border-amber-400 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl pop-in">
+            <span class="inline-block bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold px-3 py-1 rounded-full mb-2">
+              ⚡ 랜덤 미션 : 스타트 순발력 테스트
+            </span>
+            <h3 class="font-title text-2xl text-white mb-1">초록불이 켜지면 즉시 터치!</h3>
+            <p class="text-slate-300 text-xs mb-5">380ms 이내에 반응하면 보너스 점수와 무적 부스터가 발동됩니다!</p>
+
+            <!-- 신호등 UI -->
+            <div class="flex justify-center gap-3 mb-5 bg-slate-950 py-3 px-5 rounded-2xl border border-slate-800 w-fit mx-auto">
+              <div id="light-red" class="w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700 transition-all"></div>
+              <div id="light-yellow" class="w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700 transition-all"></div>
+              <div id="light-green" class="w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700 transition-all"></div>
+            </div>
+
+            <button id="btn-reaction-pad" type="button"
+              class="w-full h-32 rounded-2xl bg-rose-600 text-white font-title text-2xl sm:text-3xl shadow-lg transition-colors flex flex-col items-center justify-center gap-1 cursor-pointer">
+              <span id="reaction-pad-main">신호를 기다리세요...</span>
+              <span id="reaction-pad-sub" class="font-sans text-xs font-medium opacity-90">초록불로 바뀌기 전에 누르면 부정출발!</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 미션 오버레이 B: 스포츠 역사 & 특징 4지선다 퀴즈 -->
+        <div id="overlay-quiz" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 z-20">
+          <div class="bg-slate-900 border-2 border-sky-400 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl pop-in">
+            <div class="flex items-center justify-between mb-3">
+              <span class="bg-sky-500/20 text-sky-300 border border-sky-400/40 text-xs font-bold px-3 py-1 rounded-full">
+                🏅 랜덤 미션 : 스포츠 역사 & 특징 퀴즈
+              </span>
+              <span id="quiz-timer-badge" class="text-xs font-bold text-amber-300 bg-slate-800 px-2.5 py-1 rounded-lg">
+                남은 시간 15초
+              </span>
+            </div>
+
+            <!-- 종목 힌트 카테고리 -->
+            <div class="mb-2">
+              <span id="quiz-category" class="text-xs font-bold text-emerald-400">#구기종목</span>
+            </div>
+
+            <!-- 서술형 지문 -->
+            <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-4 mb-4">
+              <p id="quiz-question" class="text-sm sm:text-base font-bold text-white leading-relaxed"></p>
+            </div>
+
+            <!-- 4지선다 보기 -->
+            <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
+              <!-- JS로 생성 -->
+            </div>
+
+            <!-- 피드백 영역 -->
+            <div id="quiz-feedback" class="hidden rounded-xl p-3 text-xs sm:text-sm font-bold text-center"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 게임 오버 & 결과 기록증 화면 -->
+    <section id="screen-gameover" class="hidden p-5 sm:p-8">
+      <div class="max-w-lg mx-auto bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-6 text-center shadow-2xl">
+        <div class="inline-block bg-amber-400 text-slate-950 font-black text-xs px-3 py-1 rounded-full mb-2">
+          CHALLENGE COMPLETE
+        </div>
+        <h2 class="font-title text-3xl text-white mb-1">경기 결과 기록증</h2>
+        <p id="result-player-info" class="text-amber-300 font-bold text-sm mb-2"></p>
+
+        <!-- 구글 시트 전송 상태 표시 -->
+        <div id="sheet-sync-status" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 mb-5">
+          <span>⏳ 구글 시트에 점수 기록 중...</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-5 text-left">
+          <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700">
+            <p class="text-slate-400 text-xs">최종 점수</p>
+            <p id="result-score" class="font-title text-2xl sm:text-3xl text-amber-400">0점</p>
+          </div>
+          <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700">
+            <p class="text-slate-400 text-xs">도달 스테이지</p>
+            <p id="result-stage" class="font-title text-2xl sm:text-3xl text-emerald-400">STAGE 1</p>
+          </div>
+          <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700">
+            <p class="text-slate-400 text-xs">평균 반응속도</p>
+            <p id="result-reaction" class="font-black text-lg sm:text-xl text-sky-400">-</p>
+          </div>
+          <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700">
+            <p class="text-slate-400 text-xs">스포츠 퀴즈 정답률</p>
+            <p id="result-quiz" class="font-black text-lg sm:text-xl text-purple-400">0 / 0</p>
+          </div>
+        </div>
+
+        <div id="result-comment" class="bg-slate-800/60 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-slate-200 mb-6 font-medium"></div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <button id="btn-retry"
+            class="flex-1 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-title text-lg py-3.5 rounded-xl transition">
+            🔄 다시 도전하기
+          </button>
+          <button id="btn-result-ranking"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/40 font-bold text-sm py-3.5 rounded-xl transition">
+            🏆 전체 순위 확인
+          </button>
+          <button id="btn-to-lobby"
+            class="sm:w-auto bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm px-4 py-3.5 rounded-xl transition">
+            캐릭터 변경
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 전체 순위 모달 (구글 시트 실시간 연동) -->
+    <div id="modal-ranking" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-slate-900 border-2 border-amber-400/80 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl pop-in">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🏆</span>
+            <h3 class="font-title text-xl sm:text-2xl text-white">전체 실시간 순위 (TOP 50)</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-refresh-ranking" type="button" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-400/40 font-bold px-2.5 py-1.5 rounded-lg transition">
+              🔄 새로고침
+            </button>
+            <button id="btn-close-ranking" type="button" class="text-slate-400 hover:text-white text-xl font-bold px-2">✕</button>
+          </div>
+        </div>
+        <p id="ranking-source-label" class="text-xs text-slate-400 mb-3">구글 스프레드시트 실시간 연동 데이터</p>
+
+        <div id="ranking-list" class="space-y-2 mb-4 max-h-80 overflow-y-auto custom-scroll pr-1">
+          <!-- JS로 렌더링 -->
+        </div>
+
+        <div class="flex justify-end">
+          <button id="btn-close-ranking-bottom" type="button" class="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition">
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 0. 구글 시트 웹 앱 URL 설정
+    // ==========================================
+    const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwLgbzpmg2XDce-Yr0rBjbfT7taWrFG8MqWOjbfNWwoGZY1CdowhqLgnipkC2BMppCL/exec";
+
+    // ==========================================
+    // 1. 귀여운 동물 캐릭터 & 스포츠 문제 은행 데이터
+    // ==========================================
+    const CHARACTERS = [
+      {
+        id: 'rabbit',
+        name: '축구 스트라이커 토끼',
+        emoji: '🐰',
+        sportEmoji: '⚽',
+        role: '민첩한 드리블러',
+        primary: '#ef4444',
+        secondary: '#fee2e2',
+        fur: '#ffffff',
+        earInner: '#fda4af',
+        number: '10',
+        desc: '긴 귀를 휘날리며 수비수를 제치는 깡총 스트라이커'
+      },
+      {
+        id: 'shiba',
+        name: '농구 에이스 시바견',
+        emoji: '🐶',
+        sportEmoji: '🏀',
+        role: '클러치 슈터',
+        primary: '#f97316',
+        secondary: '#ffedd5',
+        fur: '#f59e0b',
+        earInner: '#fef3c7',
+        number: '23',
+        desc: '쫑긋한 귀와 엄청난 탄력으로 덩크를 꽂는 에이스'
+      },
+      {
+        id: 'cat',
+        name: '배구 스파이커 고양이',
+        emoji: '🐱',
+        sportEmoji: '🏐',
+        role: '고공 스파이커',
+        primary: '#3b82f6',
+        secondary: '#dbeafe',
+        fur: '#cbd5e1',
+        earInner: '#f9a8d4',
+        number: '7',
+        desc: '고양이 같은 유연함과 반사신경의 코트 위 해결사'
+      },
+      {
+        id: 'cheetah',
+        name: '육상 스프린터 치타',
+        emoji: '🐆',
+        sportEmoji: '🏃',
+        role: '트랙의 번개',
+        primary: '#10b981',
+        secondary: '#d1fae5',
+        fur: '#fbbf24',
+        earInner: '#78350f',
+        number: '1',
+        desc: '스타트 총성과 동시에 폭발하는 트랙 최강 스프린터'
+      }
+    ];
+
+    const RANDOM_NICKNAMES = [
+      '2학년_허들왕', '체육부장_지망생', '트랙위의_번개', '스포츠만능캐',
+      '점프력_만렙', '반응속도_0.1초', '올림픽_금메달', '우리반_에이스'
+    ];
+
+    // 고등학교 2학년 수준 스포츠 역사 및 특징 문제 은행 (14문항)
+    const SPORTS_QUESTIONS = [
+      {
+        category: '구기 스포츠의 역사',
+        question: '1891년 미국 매사추세츠주 스프링필드 YMCA 체육교사 제임스 네이스미스가 겨울철 실내에서 즐길 수 있도록 복숭아 바구니를 매달아 고안한 스포츠는?',
+        options: ['농구', '배구', '핸드볼', '플로어볼'],
+        answer: 0,
+        explanation: '제임스 네이스미스(James Naismith)는 1891년 겨울 실내 스포츠로 농구(Basketball)를 창안했습니다.'
+      },
+      {
+        category: '네트형 스포츠의 역사',
+        question: '1895년 윌리엄 모건(William G. Morgan)이 농구의 격렬함을 줄이고 남녀노소 누구나 네트를 사이에 두고 즐길 수 있도록 처음 "민토넷(Mintonette)"이라는 이름으로 만든 종목은?',
+        options: ['배드민턴', '배구', '탁구', '세팍타크로'],
+        answer: 1,
+        explanation: '배구는 1895년 윌리엄 모건이 "민토넷"이라는 이름으로 창안했으며, 이후 공을 바닥에 떨어뜨리지 않고 넘긴다는 의미의 발리볼(Volleyball)이 되었습니다.'
+      },
+      {
+        category: '라켓 스포츠의 유래',
+        question: '인도 푸나(Poona) 지방에서 유래한 놀이 "푸나"를 1873년 영국 글로스터셔주의 보퍼트 공작 영지 이름에서 따와 정식 명칭으로 부르게 된 라켓 스포츠는?',
+        options: ['테니스', '스쿼시', '배드민턴', '라켓볼'],
+        answer: 2,
+        explanation: '영국 보퍼트 공작의 영지 이름인 "배드민턴 하우스(Badminton House)"에서 종목 이름이 유래했습니다.'
+      },
+      {
+        category: '육상 경기의 규칙',
+        question: '육상 트랙 경기 중 400m 달리기에서는 출발선 위치가 레인마다 계단처럼 다르게 배치되어 있습니다. 그 가장 핵심적인 이유는 무엇일까요?',
+        options: [
+          '바깥쪽 레인 선수의 바람 저항이 더 크기 때문에',
+          '곡선 주로에서 바깥쪽 레인의 회전 반지름이 더 커서 거리를 동일하게 맞추기 위해',
+          '안쪽 레인 선수가 시야를 확보하기 유리하기 때문에',
+          '출발 신호 총성이 안쪽 레인에 먼저 들리기 때문에'
+        ],
+        answer: 1,
+        explanation: '원형 곡선 트랙에서는 바깥 레인일수록 반지름이 커져 한 바퀴 거리가 길어지므로, 모든 선수가 정확히 400m를 달리도록 스태거(Stagger) 출발선을 적용합니다.'
+      },
+      {
+        category: '구기 스포츠의 규칙',
+        question: '축구 경기에서 공격수가 공보다 앞선 위치에 있을 때 반칙이 선언되는 "오프사이드(Offside)" 규칙이 적용되지 않는 상황은?',
+        options: [
+          '프리킥을 직접 찼을 때',
+          '스로인(Throw-in)으로 공을 직접 받았을 때',
+          '패널티 박스 밖에서 스루패스를 받았을 때',
+          '골키퍼가 펀칭한 공을 찼을 때'
+        ],
+        answer: 1,
+        explanation: '축구 규칙상 골킥, 코너킥, 그리고 스로인(Throw-in)으로 직접 공을 받을 때는 오프사이드 반칙이 적용되지 않습니다.'
+      },
+      {
+        category: '스포츠 역사와 올림픽',
+        question: '기원전 776년 그리스 올림피아 제전에서 시작된 고대 올림픽을 부활시켜, 1896년 제1회 아테네 근대 올림픽 개최를 이끈 프랑스의 교육자이자 스포츠 행정가는?',
+        options: ['피에르 드 쿠베르탱', '후안 안토니오 사마란치', '토마스 바흐', '앙리 뒤낭'],
+        answer: 0,
+        explanation: '피에르 드 쿠베르탱 남작은 청소년 체육 교육과 세계 평화를 위해 1896년 아테네 근대 올림픽을 부활시켰습니다.'
+      },
+      {
+        category: '뉴스포츠의 이해',
+        question: '하키 스틱과 가벼운 플라스틱 공(속이 비고 구멍이 뚫린 공)을 사용하며, 신체 접촉을 엄격히 금지하여 학교 체육에서 안전하게 즐길 수 있도록 스웨덴에서 발전한 뉴스포츠는?',
+        options: ['라크로스', '플로어볼', '필드하키', '크리켓'],
+        answer: 1,
+        explanation: '플로어볼(Floorball)은 가벼운 카본/플라스틱 스틱과 구멍 뚫린 공을 사용하며 격렬한 몸싸움을 금지해 안전성이 높은 뉴스포츠입니다.'
+      },
+      {
+        category: '표적형 스포츠의 이해',
+        question: '양궁 경기에서 활시위를 당긴 손을 턱 밑이나 입술 끝 등 얼굴의 일정한 지점에 정확히 고정시켜 조준의 일관성을 유지하는 핵심 동작 용어는?',
+        options: ['드로잉(Drawing)', '앵커링(Anchoring)', '릴리즈(Release)', '팔로우 스루(Follow-through)'],
+        answer: 1,
+        explanation: '앵커링(Anchoring)은 닻을 내리듯 당긴 손을 얼굴의 기준점에 흔들림 없이 고정하는 양궁의 핵심 기술입니다.'
+      },
+      {
+        category: '구기 스포츠의 포지션',
+        question: '배구 경기에서 다른 팀원들과 다른 색상의 유니폼을 입고 수비(리시브, 디그)를 전담하며, 공격 제한선(어택라인) 앞쪽에서의 공격이나 블로킹이 금지된 수비 전문 포지션은?',
+        options: ['세터(Setter)', '리베로(Libero)', '아포짓 스파이커(Opposite)', '미들 블로커(Middle Blocker)'],
+        answer: 1,
+        explanation: '리베로(Libero)는 후위 수비 강화를 위해 도입된 제도로, 유니폼 색상이 다르며 서브·블로킹·네트 위 공격이 제한됩니다.'
+      },
+      {
+        category: '플라잉디스크 스포츠',
+        question: '원반(플라잉디스크)을 패스하며 상대 엔드존에서 잡으면 득점하는 스포츠로, 심판 없이 선수들 스스로 규칙을 준수하는 "스피릿 오브 더 게임(Spirit of the Game)" 정신을 강조하는 종목은?',
+        options: ['얼티미트(Ultimate)', '디스크골프(Disc Golf)', '킨볼(Kin-Ball)', '츄크볼(Tchoukball)'],
+        answer: 0,
+        explanation: '얼티미트(Ultimate)는 미식축구와 농구의 특징을 결합한 원반 스포츠로, 페어플레이 정신인 "스피릿 오브 더 게임"을 중시합니다.'
+      },
+      {
+        category: '우리나라 전통 스포츠',
+        question: '2018년 남북 최초 공동으로 유네스코 인류무형문화유산에 등재되었으며, 샅바를 잡고 상대를 넘어뜨리는 우리나라 고유의 전통 투기 종목은?',
+        options: ['택견', '씨름', '태권도', '활쏘기'],
+        answer: 1,
+        explanation: '씨름은 2018년 유네스코 무형유산위원회에서 남북 최초 공동 인류무형문화유산으로 등재되었습니다.'
+      },
+      {
+        category: '농구 경기 규칙',
+        question: '농구 경기에서 공격권을 가진 팀이 림(골대)을 맞히는 슛을 시도하지 않고 공을 소유할 수 있는 제한 시간(샷 클락)은 몇 초일까요? (FIBA 국제규칙 기준)',
+        options: ['14초', '20초', '24초', '30초'],
+        answer: 2,
+        explanation: '국제농구연맹(FIBA) 기준 공격 제한 시간은 24초이며, 공격 리바운드 시에는 14초로 리셋됩니다.'
+      },
+      {
+        category: '스포츠 생리학 기초',
+        question: '장거리 마라톤이나 수영처럼 산소를 지속적으로 공급받으며 지방과 탄수화물을 에너지원으로 사용하는 운동 형태를 무엇이라 부를까요?',
+        options: ['무산소성 운동', '유산소성 운동', '등척성 근력 운동', '플라이오메트릭 운동'],
+        answer: 1,
+        explanation: '유산소성 운동(Aerobic Exercise)은 심폐지구력을 향상시키며 장시간 지속 가능한 운동입니다.'
+      },
+      {
+        category: '뉴스포츠의 이해',
+        question: '3개 팀이 동시에 한 코트에서 지름 1.22m의 거대한 공을 바닥에 떨어뜨리지 않고 주고받으며, "옴니킨(OMNIKIN)"을 외치고 수비 팀을 호명하는 협동형 뉴스포츠는?',
+        options: ['킨볼(Kin-Ball)', '넷볼(Netball)', '티볼(T-Ball)', '피클볼(Pickleball)'],
+        answer: 0,
+        explanation: '킨볼은 캐나다에서 창안된 뉴스포츠로 3팀 동시 경기와 전원 터치 규칙을 통해 협동심을 기릅니다.'
+      }
+    ];
+
+    // ==========================================
+    // 2. 게임 상태 변수 및 DOM 요소
+    // ==========================================
+    const MAX_HEARTS = 5;
+
+    let selectedChar = CHARACTERS[0];
+    let nickname = '';
+    let gameState = 'LOBBY'; // LOBBY, RUNNING, ROULETTE, MISSION_REACTION, MISSION_QUIZ, GAMEOVER
+
+    // 캔버스 & 물리 엔진 변수
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const GROUND_Y = 335;
+
+    let player = {
+      x: 130,
+      y: GROUND_Y,
+      w: 44,
+      h: 54,
+      vy: 0,
+      gravity: 0.78,
+      jumpPower: -14.8,
+      jumpCount: 0,
+      maxJumps: 2,
+      invincibleTimer: 0,
+      hurtTimer: 0,
+      runCycle: 0
+    };
+
+    let stats = {
+      score: 0,
+      distance: 0,
+      stage: 1,
+      hearts: MAX_HEARTS,
+      speed: 5.8,
+      gateProgress: 0,
+      gateTarget: 3400, // 미션 게이트가 덜 자주 나오도록 충분히 넓은 간격
+      reactionTimes: [],
+      quizTotal: 0,
+      quizCorrect: 0,
+      usedQuestionIndices: [],
+      lastMissionType: null
+    };
+
+    let obstacles = [];
+    let particles = [];
+    let clouds = [
+      { x: 120, y: 65, scale: 1.0 },
+      { x: 430, y: 45, scale: 0.8 },
+      { x: 760, y: 80, scale: 1.1 }
+    ];
+    let nextObstacleTimer = 110;
+    let animationFrameId = null;
+
+    // 미션 전용 타이머/상태
+    let rouletteInterval = null;
+    let reactionState = 'IDLE'; // WAIT, READY, DONE
+    let reactionStartTime = 0;
+    let reactionTimeouts = [];
+    let quizTimerInterval = null;
+    let quizTimeLeft = 15;
+    let currentQuiz = null;
+    let quizAnswered = false;
+
+    // ==========================================
+    // 3. 로비 초기화 & 캐릭터 카드 렌더링
+    // ==========================================
+    function initLobby() {
+      const grid = document.getElementById('character-grid');
+      grid.innerHTML = '';
+
+      CHARACTERS.forEach((char) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `char-card text-left bg-slate-900/90 border-2 border-slate-700 rounded-2xl p-3.5 flex flex-col justify-between ${char.id === selectedChar.id ? 'selected' : ''}`;
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-1">
+                <span class="text-3xl">${char.emoji}</span>
+                <span class="text-lg">${char.sportEmoji}</span>
+              </div>
+              <span class="text-xs font-black px-2 py-0.5 rounded bg-slate-800 text-slate-300">NO.${char.number}</span>
+            </div>
+            <p class="font-bold text-white text-sm mb-0.5">${char.name}</p>
+            <p class="text-xs font-bold mb-1.5" style="color:${char.primary}">${char.role}</p>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-snug">${char.desc}</p>
+        `;
+        card.addEventListener('click', () => {
+          selectedChar = char;
+          initLobby();
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    document.getElementById('btn-random-nick').addEventListener('click', () => {
+      const rand = RANDOM_NICKNAMES[Math.floor(Math.random() * RANDOM_NICKNAMES.length)];
+      const num = Math.floor(10 + Math.random() * 89);
+      document.getElementById('input-nickname').value = `${rand}_${num}`;
+      document.getElementById('nick-error').classList.add('hidden');
+    });
+
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      const input = document.getElementById('input-nickname').value.trim();
+      if (!input) {
+        document.getElementById('nick-error').classList.remove('hidden');
+        document.getElementById('input-nickname').focus();
+        return;
+      }
+      document.getElementById('nick-error').classList.add('hidden');
+      nickname = input;
+      startNewGame();
+    });
+
+    // ==========================================
+    // 4. 게임 시작 및 루프 관리
+    // ==========================================
+    function switchScreen(screenId) {
+      ['screen-lobby', 'screen-game', 'screen-gameover'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function startNewGame() {
+      stats = {
+        score: 0,
+        distance: 0,
+        stage: 1,
+        hearts: MAX_HEARTS,
+        speed: 5.8,
+        gateProgress: 0,
+        gateTarget: 3400,
+        reactionTimes: [],
+        quizTotal: 0,
+        quizCorrect: 0,
+        usedQuestionIndices: [],
+        lastMissionType: null
+      };
+
+      player.y = GROUND_Y;
+      player.vy = 0;
+      player.jumpCount = 0;
+      player.invincibleTimer = 0;
+      player.hurtTimer = 0;
+
+      obstacles = [];
+      particles = [];
+      nextObstacleTimer = 110;
+
+      document.getElementById('hud-char-badge').textContent = `${selectedChar.emoji} ${selectedChar.name}`;
+      document.getElementById('hud-nickname').textContent = nickname;
+      updateHUD();
+
+      hideAllMissionOverlays();
+      switchScreen('screen-game');
+      gameState = 'RUNNING';
+
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      gameLoop();
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-score').textContent = Math.floor(stats.score).toLocaleString();
+      document.getElementById('hud-stage').textContent = stats.stage;
+      const alive = Math.max(0, stats.hearts);
+      const dead = Math.max(0, MAX_HEARTS - alive);
+      document.getElementById('hud-hearts').textContent = '❤️'.repeat(alive) + '🖤'.repeat(dead);
+    }
+
+    function hideAllMissionOverlays() {
+      document.getElementById('overlay-roulette').classList.add('hidden');
+      document.getElementById('overlay-reaction').classList.add('hidden');
+      document.getElementById('overlay-quiz').classList.add('hidden');
+    }
+
+    // 점프 입력 처리
+    function triggerJump() {
+      if (gameState !== 'RUNNING') return;
+      if (player.jumpCount < player.maxJumps) {
+        player.vy = player.jumpPower;
+        player.jumpCount++;
+        spawnParticles(player.x + player.w / 2, player.y, '#fef08a', 8);
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (gameState === 'RUNNING') {
+          e.preventDefault();
+          triggerJump();
+        }
+      }
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      triggerJump();
+    });
+
+    // ==========================================
+    // 5. 장애물 생성 & 물리 업데이트
+    // ==========================================
+    function spawnObstacle() {
+      const types = ['hurdle', 'cone', 'ball'];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      if (type === 'hurdle') {
+        obstacles.push({
+          type: 'hurdle',
+          x: canvas.width + 30,
+          y: GROUND_Y,
+          w: 34,
+          h: 52
+        });
+      } else if (type === 'cone') {
+        obstacles.push({
+          type: 'cone',
+          x: canvas.width + 30,
+          y: GROUND_Y,
+          w: 38,
+          h: 40
+        });
+      } else {
+        // 공중 날아오는 스포츠 공
+        const isHigh = Math.random() > 0.45;
+        obstacles.push({
+          type: 'ball',
+          x: canvas.width + 30,
+          y: isHigh ? GROUND_Y - 62 : GROUND_Y - 12,
+          w: 32,
+          h: 32,
+          rot: 0
+        });
+      }
+    }
+
+    function spawnParticles(x, y, color, count = 10) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 1.2) * 5,
+          life: 24 + Math.random() * 12,
+          color,
+          size: 3 + Math.random() * 4
+        });
+      }
+    }
+
+    function updatePhysics() {
+      // 구름 이동
+      clouds.forEach(c => {
+        c.x -= stats.speed * 0.18;
+        if (c.x < -120) c.x = canvas.width + 80;
+      });
+
+      // 플레이어 점프 및 중력
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      if (player.y >= GROUND_Y) {
+        player.y = GROUND_Y;
+        player.vy = 0;
+        player.jumpCount = 0;
+      }
+
+      if (player.invincibleTimer > 0) player.invincibleTimer--;
+      if (player.hurtTimer > 0) player.hurtTimer--;
+      player.runCycle += stats.speed * 0.045;
+
+      // 점수 & 게이트 진행도 증가
+      const boostMultiplier = player.invincibleTimer > 0 ? 1.5 : 1.0;
+      stats.distance += stats.speed * boostMultiplier;
+      stats.score += (stats.speed * 0.16) * boostMultiplier;
+      stats.gateProgress += stats.speed * boostMultiplier;
+
+      // 미션 게이트 도달 체크
+      if (stats.gateProgress >= stats.gateTarget) {
+        stats.gateProgress = 0;
+        obstacles = []; // 게이트 진입 시 화면 장애물 정리
+        startRandomGateMission();
+        return;
+      }
+
+      // 장애물 스폰 (여유 있는 간격 유지)
+      nextObstacleTimer--;
+      if (nextObstacleTimer <= 0 && stats.gateTarget - stats.gateProgress > 520) {
+        spawnObstacle();
+        const minGap = Math.max(82, 132 - stats.stage * 5);
+        nextObstacleTimer = minGap + Math.floor(Math.random() * 65);
+      }
+
+      // 장애물 이동 및 충돌 검사
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.x -= stats.speed * boostMultiplier;
+        if (obs.type === 'ball') obs.rot -= 0.12;
+
+        // 히트박스 (너그럽게 보정)
+        const pBox = {
+          x: player.x + 9,
+          y: player.y - player.h + 8,
+          w: player.w - 18,
+          h: player.h - 12
+        };
+        const oBox = {
+          x: obs.x + 5,
+          y: obs.y - obs.h + 5,
+          w: obs.w - 10,
+          h: obs.h - 8
+        };
+
+        const isColliding =
+          pBox.x < oBox.x + oBox.w &&
+          pBox.x + pBox.w > oBox.x &&
+          pBox.y < oBox.y + oBox.h &&
+          pBox.y + pBox.h > oBox.y;
+
+        if (isColliding) {
+          if (player.invincibleTimer > 0) {
+            // 무적 부스터 상태에서는 장애물 파괴 + 보너스
+            spawnParticles(obs.x + obs.w / 2, obs.y - obs.h / 2, '#38bdf8', 14);
+            stats.score += 50;
+            obstacles.splice(i, 1);
+            continue;
+          } else {
+            // 피해 처리
+            stats.hearts--;
+            player.invincibleTimer = 95;
+            player.hurtTimer = 28;
+            spawnParticles(player.x + player.w / 2, player.y - player.h / 2, '#f43f5e', 18);
+            obstacles.splice(i, 1);
+            updateHUD();
+
+            if (stats.hearts <= 0) {
+              endGame();
+              return;
+            }
+            continue;
+          }
+        }
+
+        if (obs.x + obs.w < -40) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      // 파티클 업데이트
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.25;
+        pt.life--;
+        if (pt.life <= 0) particles.splice(i, 1);
+      }
+
+      updateHUD();
+    }
+
+    // ==========================================
+    // 6. 캔버스 렌더링 (트랙, 귀여운 동물 캐릭터, 장애물, 게이트)
+    // ==========================================
+    function drawScene() {
+      // 하늘 배경
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+      skyGrad.addColorStop(0, '#0284c7');
+      skyGrad.addColorStop(1, '#7dd3fc');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, GROUND_Y);
+
+      // 구름
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      clouds.forEach(c => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 22 * c.scale, 0, Math.PI * 2);
+        ctx.arc(c.x + 20 * c.scale, c.y - 8 * c.scale, 26 * c.scale, 0, Math.PI * 2);
+        ctx.arc(c.x + 44 * c.scale, c.y, 20 * c.scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 원경 경기장 실루엣
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.14)';
+      for (let sx = -((stats.distance * 0.15) % 240); sx < canvas.width; sx += 240) {
+        ctx.fillRect(sx, GROUND_Y - 58, 180, 58);
+        ctx.beginPath();
+        ctx.arc(sx + 90, GROUND_Y - 58, 90, Math.PI, 0);
+        ctx.fill();
+      }
+
+      // 잔디 영역
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(0, GROUND_Y - 12, canvas.width, 14);
+
+      // 육상 우레탄 트랙 바닥
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+      // 트랙 흰색 레인 라인
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillRect(0, GROUND_Y + 24, canvas.width, 4);
+      ctx.fillRect(0, GROUND_Y + 56, canvas.width, 4);
+
+      // 바닥 거리 눈금
+      const dashOffset = -(stats.distance % 90);
+      for (let dx = dashOffset; dx < canvas.width; dx += 90) {
+        ctx.fillRect(dx, GROUND_Y + 6, 36, 4);
+      }
+
+      // 미션 게이트가 가까워지면 화면 오른쪽에 아치형 게이트 표시
+      const remainToGate = stats.gateTarget - stats.gateProgress;
+      if (remainToGate < 520) {
+        const gateX = player.x + remainToGate;
+        drawMissionGate(gateX);
+      }
+
+      // 장애물 그리기
+      obstacles.forEach(obs => drawObstacle(obs));
+
+      // 귀여운 동물 캐릭터 그리기
+      drawAnimalPlayer();
+
+      // 파티클 그리기
+      particles.forEach(pt => {
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 상단 미션 게이트 진행 바 (캔버스 내부 미니 게이지)
+      const ratio = Math.min(1, stats.gateProgress / stats.gateTarget);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+      ctx.fillRect(20, 14, 210, 12);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(22, 16, 206 * ratio, 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px "Noto Sans KR"';
+      ctx.fillText('NEXT GATE', 238, 24);
+    }
+
+    function drawMissionGate(gx) {
+      // 게이트 기둥
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(gx, GROUND_Y - 170, 16, 170);
+      ctx.fillRect(gx + 54, GROUND_Y - 170, 16, 170);
+
+      // 상단 배너
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(gx - 12, GROUND_Y - 196, 94, 30);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '900 12px "Noto Sans KR"';
+      ctx.fillText('🎲 MISSION', gx - 2, GROUND_Y - 176);
+
+      // 반투명 에너지 막
+      const grad = ctx.createLinearGradient(gx, GROUND_Y - 170, gx, GROUND_Y);
+      grad.addColorStop(0, 'rgba(250, 204, 21, 0.45)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.25)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(gx + 16, GROUND_Y - 166, 38, 166);
+    }
+
+    function drawObstacle(obs) {
+      if (obs.type === 'hurdle') {
+        // 허들 다리
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(obs.x + 6, obs.y - obs.h + 12, 5, obs.h - 12);
+        ctx.fillRect(obs.x + obs.w - 11, obs.y - obs.h + 12, 5, obs.h - 12);
+        // 허들 상단 바 (흰/주황 줄무늬)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(obs.x, obs.y - obs.h, obs.w, 12);
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(obs.x + 8, obs.y - obs.h, 8, 12);
+        ctx.fillRect(obs.x + 22, obs.y - obs.h, 8, 12);
+      } else if (obs.type === 'cone') {
+        // 라바콘
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(obs.x + obs.w / 2, obs.y - obs.h);
+        ctx.lineTo(obs.x + obs.w - 4, obs.y - 5);
+        ctx.lineTo(obs.x + 4, obs.y - 5);
+        ctx.closePath();
+        ctx.fill();
+        // 흰색 반사띠
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(obs.x + 11, obs.y - obs.h + 16, obs.w - 22, 6);
+        // 받침대
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(obs.x, obs.y - 5, obs.w, 5);
+      } else if (obs.type === 'ball') {
+        ctx.save();
+        ctx.translate(obs.x + obs.w / 2, obs.y - obs.h / 2);
+        ctx.rotate(obs.rot);
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(0, 0, obs.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-obs.w / 2, 0);
+        ctx.lineTo(obs.w / 2, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 귀여운 동물 캐릭터 그리기
+    function drawAnimalPlayer() {
+      ctx.save();
+
+      // 무적 깜빡임 및 오라
+      if (player.invincibleTimer > 0) {
+        if (Math.floor(player.invincibleTimer / 4) % 2 === 0) {
+          ctx.globalAlpha = 0.7;
+        }
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(player.x + player.w / 2, player.y - player.h / 2, 34, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const px = player.x;
+      const py = player.y;
+      const legSwing = player.y < GROUND_Y ? 6 : Math.sin(player.runCycle) * 7;
+      const earBounce = Math.sin(player.runCycle * 1.2) * 2.5;
+
+      // 1. 꼬리 (유니폼 뒤쪽)
+      if (selectedChar.id === 'rabbit') {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(px + 6, py - 18, 6, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (selectedChar.id === 'shiba') {
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(px + 6, py - 21, 6, 0.2 * Math.PI, 1.5 * Math.PI);
+        ctx.stroke();
+      } else if (selectedChar.id === 'cat') {
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(px + 8, py - 17);
+        ctx.quadraticCurveTo(px - 6, py - 26 + earBounce, px - 2, py - 35);
+        ctx.stroke();
+      } else if (selectedChar.id === 'cheetah') {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(px + 8, py - 17);
+        ctx.quadraticCurveTo(px - 8, py - 22 - earBounce, px - 4, py - 32);
+        ctx.stroke();
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(px - 4, py - 32, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. 다리
+      ctx.fillStyle = selectedChar.fur;
+      ctx.fillRect(px + 13 + legSwing, py - 13, 6, 13);
+      ctx.fillRect(px + 25 - legSwing, py - 13, 6, 13);
+      // 운동화
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(px + 12 + legSwing, py - 4, 9, 4);
+      ctx.fillRect(px + 24 - legSwing, py - 4, 9, 4);
+
+      // 3. 스포츠 유니폼 상의
+      ctx.fillStyle = selectedChar.primary;
+      ctx.beginPath();
+      ctx.roundRect(px + 9, py - 32, 26, 20, 6);
+      ctx.fill();
+
+      // 등번호
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 10px "Noto Sans KR"';
+      ctx.fillText(selectedChar.number, px + 16, py - 18);
+
+      // 4. 동물 귀 (머리 뒤/위)
+      const headCx = px + 22;
+      const headCy = py - 42;
+
+      if (selectedChar.id === 'rabbit') {
+        // 긴 토끼 귀 2개
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(headCx - 6, headCy - 17 + earBounce, 4.5, 12, -0.18, 0, Math.PI * 2);
+        ctx.ellipse(headCx + 4, headCy - 18 - earBounce, 4.5, 12, 0.12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fda4af';
+        ctx.beginPath();
+        ctx.ellipse(headCx - 6, headCy - 17 + earBounce, 2, 8, -0.18, 0, Math.PI * 2);
+        ctx.ellipse(headCx + 4, headCy - 18 - earBounce, 2, 8, 0.12, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (selectedChar.id === 'shiba') {
+        // 쫑긋 세모 시바 귀
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(headCx - 12, headCy - 6);
+        ctx.lineTo(headCx - 8, headCy - 19 + earBounce * 0.4);
+        ctx.lineTo(headCx - 1, headCy - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(headCx + 1, headCy - 10);
+        ctx.lineTo(headCx + 8, headCy - 19 - earBounce * 0.4);
+        ctx.lineTo(headCx + 12, headCy - 6);
+        ctx.closePath();
+        ctx.fill();
+      } else if (selectedChar.id === 'cat') {
+        // 고양이 귀 + 핑크 속귀
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.moveTo(headCx - 13, headCy - 5);
+        ctx.lineTo(headCx - 9, headCy - 19 + earBounce * 0.4);
+        ctx.lineTo(headCx - 1, headCy - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(headCx + 1, headCy - 10);
+        ctx.lineTo(headCx + 9, headCy - 19 - earBounce * 0.4);
+        ctx.lineTo(headCx + 13, headCy - 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#f9a8d4';
+        ctx.beginPath();
+        ctx.moveTo(headCx - 11, headCy - 7);
+        ctx.lineTo(headCx - 9, headCy - 15 + earBounce * 0.4);
+        ctx.lineTo(headCx - 3, headCy - 10);
+        ctx.closePath();
+        ctx.fill();
+      } else if (selectedChar.id === 'cheetah') {
+        // 둥근 치타 귀
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(headCx - 10, headCy - 11, 5.5, 0, Math.PI * 2);
+        ctx.arc(headCx + 10, headCy - 11, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.arc(headCx - 10, headCy - 11, 2.5, 0, Math.PI * 2);
+        ctx.arc(headCx + 10, headCy - 11, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 5. 동물 얼굴(머리)
+      ctx.fillStyle = selectedChar.fur;
+      ctx.beginPath();
+      ctx.arc(headCx, headCy, 13.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 시바견 하얀 볼/주둥이 패턴
+      if (selectedChar.id === 'shiba') {
+        ctx.fillStyle = '#fef3c7';
+        ctx.beginPath();
+        ctx.ellipse(headCx + 3, headCy + 4, 10, 7.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 치타 얼굴 점박이 무늬
+      if (selectedChar.id === 'cheetah') {
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.arc(headCx - 6, headCy + 2, 1.4, 0, Math.PI * 2);
+        ctx.arc(headCx - 3, headCy + 5, 1.4, 0, Math.PI * 2);
+        ctx.arc(headCx + 9, headCy + 4, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 스포츠 헤어밴드
+      ctx.fillStyle = selectedChar.primary;
+      ctx.fillRect(headCx - 13, headCy - 9, 26, 4);
+      // 헤어밴드 뒤쪽 날리는 리본
+      ctx.fillRect(headCx - 18, headCy - 8 + earBounce * 0.5, 6, 3);
+
+      // 6. 표정 (눈 & 코 & 수염)
+      if (player.hurtTimer > 0) {
+        // 피격 시 아파하는 표정 (> <)
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(headCx + 2, headCy - 3);
+        ctx.lineTo(headCx + 6, headCy);
+        ctx.lineTo(headCx + 2, headCy + 3);
+        ctx.stroke();
+      } else {
+        // 초롱초롱한 눈
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(headCx + 5, headCy - 1, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+        // 눈 하이라이트
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(headCx + 5.8, headCy - 1.8, 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 코 & 발그레 볼
+      ctx.fillStyle = selectedChar.id === 'rabbit' || selectedChar.id === 'cat' ? '#f43f5e' : '#1e293b';
+      ctx.beginPath();
+      ctx.arc(headCx + 11.5, headCy + 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(headCx + 2, headCy + 4.5, 3, 1.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 고양이/토끼 수염
+      if (selectedChar.id === 'cat' || selectedChar.id === 'rabbit') {
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(headCx + 9, headCy + 2);
+        ctx.lineTo(headCx + 16, headCy + 1);
+        ctx.moveTo(headCx + 9, headCy + 4);
+        ctx.lineTo(headCx + 16, headCy + 5);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function gameLoop() {
+      if (gameState === 'RUNNING') {
+        updatePhysics();
+        drawScene();
+      } else if (
+        gameState === 'ROULETTE' ||
+        gameState === 'MISSION_REACTION' ||
+        gameState === 'MISSION_QUIZ'
+      ) {
+        drawScene();
+      }
+      if (gameState !== 'GAMEOVER' && gameState !== 'LOBBY') {
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // ==========================================
+    // 7. 예측 불가 단일 랜덤 미션 (순발력 OR 퀴즈 택1)
+    // ==========================================
+    function startRandomGateMission() {
+      gameState = 'ROULETTE';
+      const overlay = document.getElementById('overlay-roulette');
+      const iconEl = document.getElementById('roulette-icon');
+      const labelEl = document.getElementById('roulette-label');
+      overlay.classList.remove('hidden');
+
+      // 최종 결정 (50% 확률, 같은 미션이 3번 연속 나오지 않도록 보정)
+      let chosenType = Math.random() < 0.5 ? 'REACTION' : 'QUIZ';
+      if (stats.lastMissionType && Math.random() < 0.35) {
+        chosenType = stats.lastMissionType === 'REACTION' ? 'QUIZ' : 'REACTION';
+      }
+      stats.lastMissionType = chosenType;
+
+      let toggle = false;
+      if (rouletteInterval) clearInterval(rouletteInterval);
+      rouletteInterval = setInterval(() => {
+        toggle = !toggle;
+        iconEl.textContent = toggle ? '⚡' : '🏅';
+        labelEl.textContent = toggle ? '순발력 테스트' : '스포츠 4지선다 퀴즈';
+      }, 110);
+
+      setTimeout(() => {
+        clearInterval(rouletteInterval);
+        iconEl.textContent = chosenType === 'REACTION' ? '⚡' : '🏅';
+        labelEl.textContent = chosenType === 'REACTION' ? '당첨! 순발력 테스트' : '당첨! 스포츠 4지선다 퀴즈';
+
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          if (chosenType === 'REACTION') {
+            startReactionMission();
+          } else {
+            startQuizMission();
+          }
+        }, 550);
+      }, 950);
+    }
+
+    // [미션 A] 순발력 테스트
+    function startReactionMission() {
+      gameState = 'MISSION_REACTION';
+      reactionState = 'WAIT';
+
+      const overlay = document.getElementById('overlay-reaction');
+      const pad = document.getElementById('btn-reaction-pad');
+      const padMain = document.getElementById('reaction-pad-main');
+      const padSub = document.getElementById('reaction-pad-sub');
+
+      const lRed = document.getElementById('light-red');
+      const lYellow = document.getElementById('light-yellow');
+      const lGreen = document.getElementById('light-green');
+
+      // 신호등 초기화
+      lRed.className = 'w-11 h-11 rounded-full bg-rose-500 shadow-[0_0_20px_#f43f5e] border-2 border-rose-300';
+      lYellow.className = 'w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700';
+      lGreen.className = 'w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700';
+
+      pad.className = 'w-full h-32 rounded-2xl bg-rose-600 text-white font-title text-2xl sm:text-3xl shadow-lg transition-colors flex flex-col items-center justify-center gap-1 cursor-pointer';
+      padMain.textContent = '신호를 기다리세요...';
+      padSub.textContent = '초록불로 바뀌면 즉시 클릭/터치!';
+
+      overlay.classList.remove('hidden');
+
+      reactionTimeouts.forEach(t => clearTimeout(t));
+      reactionTimeouts = [];
+
+      // 0.8초 뒤 노란불
+      reactionTimeouts.push(setTimeout(() => {
+        if (gameState !== 'MISSION_REACTION') return;
+        lYellow.className = 'w-11 h-11 rounded-full bg-amber-400 shadow-[0_0_20px_#facc15] border-2 border-amber-200';
+        padMain.textContent = '준비 (READY)...';
+      }, 800));
+
+      // 노란불 이후 0.9 ~ 2.4초 사이 랜덤 초록불
+      const randomDelay = 1700 + Math.floor(Math.random() * 1500);
+      reactionTimeouts.push(setTimeout(() => {
+        if (gameState !== 'MISSION_REACTION') return;
+        reactionState = 'READY';
+        reactionStartTime = performance.now();
+
+        lRed.className = 'w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700';
+        lYellow.className = 'w-11 h-11 rounded-full bg-slate-800 border-2 border-slate-700';
+        lGreen.className = 'w-11 h-11 rounded-full bg-emerald-400 shadow-[0_0_25px_#34d399] border-2 border-emerald-200';
+
+        pad.className = 'w-full h-32 rounded-2xl bg-emerald-500 text-slate-950 font-title text-3xl sm:text-4xl shadow-lg flex flex-col items-center justify-center gap-1 cursor-pointer animate-pulse-fast';
+        padMain.textContent = '지금 클릭! (GO!)';
+        padSub.textContent = '최대한 빠르게 터치하세요!';
+      }, randomDelay));
+    }
+
+    document.getElementById('btn-reaction-pad').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (gameState !== 'MISSION_REACTION') return;
+
+      const pad = document.getElementById('btn-reaction-pad');
+      const padMain = document.getElementById('reaction-pad-main');
+      const padSub = document.getElementById('reaction-pad-sub');
+
+      if (reactionState === 'WAIT') {
+        // 부정 출발
+        reactionTimeouts.forEach(t => clearTimeout(t));
+        reactionState = 'DONE';
+        stats.hearts--;
+        updateHUD();
+
+        pad.className = 'w-full h-32 rounded-2xl bg-slate-800 border-2 border-rose-500 text-rose-400 font-title text-2xl flex flex-col items-center justify-center gap-1';
+        padMain.textContent = '⚠️ 부정 출발 (라이프 -1)';
+        padSub.textContent = '초록불이 켜진 뒤에 눌러야 합니다!';
+
+        setTimeout(() => {
+          document.getElementById('overlay-reaction').classList.add('hidden');
+          if (stats.hearts <= 0) {
+            endGame();
+          } else {
+            finishGateAndResume(false);
+          }
+        }, 1250);
+      } else if (reactionState === 'READY') {
+        reactionState = 'DONE';
+        const ms = Math.round(performance.now() - reactionStartTime);
+        stats.reactionTimes.push(ms);
+
+        const isFast = ms <= 380;
+        const bonus = isFast ? 300 : 150;
+        stats.score += bonus;
+        updateHUD();
+
+        pad.className = 'w-full h-32 rounded-2xl bg-sky-500 text-slate-950 font-title text-2xl sm:text-3xl flex flex-col items-center justify-center gap-1';
+        padMain.textContent = `⚡ ${ms}ms (${isFast ? '초고속 보너스!' : '성공!'})`;
+        padSub.textContent = `+${bonus}점 획득! 트랙으로 복귀합니다!`;
+
+        setTimeout(() => {
+          document.getElementById('overlay-reaction').classList.add('hidden');
+          finishGateAndResume(isFast);
+        }, 1200);
+      }
+    });
+
+    // [미션 B] 스포츠 4지선다 퀴즈
+    function pickNextQuestion() {
+      if (stats.usedQuestionIndices.length >= SPORTS_QUESTIONS.length) {
+        stats.usedQuestionIndices = [];
+      }
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * SPORTS_QUESTIONS.length);
+      } while (stats.usedQuestionIndices.includes(idx));
+      stats.usedQuestionIndices.push(idx);
+      return SPORTS_QUESTIONS[idx];
+    }
+
+    function startQuizMission() {
+      gameState = 'MISSION_QUIZ';
+      quizAnswered = false;
+      quizTimeLeft = 15;
+      currentQuiz = pickNextQuestion();
+
+      const overlay = document.getElementById('overlay-quiz');
+      const feedback = document.getElementById('quiz-feedback');
+      const optionsContainer = document.getElementById('quiz-options');
+
+      feedback.classList.add('hidden');
+      document.getElementById('quiz-category').textContent = `#${currentQuiz.category}`;
+      document.getElementById('quiz-question').textContent = currentQuiz.question;
+      document.getElementById('quiz-timer-badge').textContent = `남은 시간 ${quizTimeLeft}초`;
+
+      optionsContainer.innerHTML = '';
+      currentQuiz.options.forEach((optText, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quiz-opt-btn text-left bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 hover:border-sky-400 rounded-xl p-3.5 text-xs sm:text-sm font-bold text-white transition flex items-start gap-2.5';
+        btn.innerHTML = `
+          <span class="bg-slate-900 text-sky-300 font-black px-2 py-0.5 rounded text-xs shrink-0">${index + 1}</span>
+          <span>${optText}</span>
+        `;
+        btn.addEventListener('click', () => handleQuizAnswer(index));
+        optionsContainer.appendChild(btn);
+      });
+
+      overlay.classList.remove('hidden');
+
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      quizTimerInterval = setInterval(() => {
+        quizTimeLeft--;
+        document.getElementById('quiz-timer-badge').textContent = `남은 시간 ${quizTimeLeft}초`;
+        if (quizTimeLeft <= 0) {
+          clearInterval(quizTimerInterval);
+          if (!quizAnswered) {
+            handleQuizAnswer(-1); // 시간 초과
+          }
+        }
+      }, 1000);
+    }
+
+    function handleQuizAnswer(selectedIndex) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+      clearInterval(quizTimerInterval);
+      stats.quizTotal++;
+
+      const isCorrect = selectedIndex === currentQuiz.answer;
+      const buttons = document.querySelectorAll('.quiz-opt-btn');
+      const feedback = document.getElementById('quiz-feedback');
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === currentQuiz.answer) {
+          btn.className = 'quiz-opt-btn text-left bg-emerald-600/30 border-2 border-emerald-400 rounded-xl p-3.5 text-xs sm:text-sm font-bold text-emerald-200 flex items-start gap-2.5';
+        } else if (idx === selectedIndex && !isCorrect) {
+          btn.className = 'quiz-opt-btn text-left bg-rose-600/30 border-2 border-rose-400 rounded-xl p-3.5 text-xs sm:text-sm font-bold text-rose-200 flex items-start gap-2.5';
+        } else {
+          btn.classList.add('opacity-45');
+        }
+      });
+
+      feedback.classList.remove('hidden');
+
+      if (isCorrect) {
+        stats.quizCorrect++;
+        const timeBonus = quizTimeLeft * 15;
+        const gained = 350 + timeBonus;
+        stats.score += gained;
+        updateHUD();
+
+        feedback.className = 'rounded-xl p-3 text-xs sm:text-sm font-bold text-center bg-emerald-500/20 border border-emerald-400 text-emerald-200';
+        feedback.innerHTML = `🎉 정답입니다! (+${gained}점 & 무적 부스터 발동!)<br><span class="font-normal text-xs text-slate-200">${currentQuiz.explanation}</span>`;
+
+        setTimeout(() => {
+          document.getElementById('overlay-quiz').classList.add('hidden');
+          finishGateAndResume(true);
+        }, 1750);
+      } else {
+        stats.hearts--;
+        updateHUD();
+
+        feedback.className = 'rounded-xl p-3 text-xs sm:text-sm font-bold text-center bg-rose-500/20 border border-rose-400 text-rose-200';
+        feedback.innerHTML = `${selectedIndex === -1 ? '⏰ 시간 초과!' : '❌ 아쉽습니다!'} (라이프 -1)<br><span class="font-normal text-xs text-slate-200">${currentQuiz.explanation}</span>`;
+
+        setTimeout(() => {
+          document.getElementById('overlay-quiz').classList.add('hidden');
+          if (stats.hearts <= 0) {
+            endGame();
+          } else {
+            finishGateAndResume(false);
+          }
+        }, 2050);
+      }
+    }
+
+    function finishGateAndResume(grantBoost) {
+      stats.stage++;
+      stats.speed = Math.min(10.8, 5.8 + (stats.stage - 1) * 0.45);
+      player.y = GROUND_Y;
+      player.vy = 0;
+      player.jumpCount = 0;
+      player.invincibleTimer = grantBoost ? 160 : 75;
+      updateHUD();
+      gameState = 'RUNNING';
+    }
+
+    // ==========================================
+    // 8. 게임 오버, 구글 시트 점수 전송 & 실시간 순위 조회
+    // ==========================================
+    const STORAGE_KEY = 'pe_grade2_sports_ranking_backup_v2';
+
+    function getLocalBackupRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLocalBackupRecord(record) {
+      const list = getLocalBackupRecords();
+      list.push(record);
+      list.sort((a, b) => b.score - a.score);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+    }
+
+    async function sendScoreToGoogleSheet(record) {
+      const statusEl = document.getElementById('sheet-sync-status');
+      statusEl.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-amber-300 border border-amber-400/40 mb-5';
+      statusEl.innerHTML = '<span>⏳ 구글 시트에 점수 전송 중...</span>';
+
+      try {
+        await fetch(GOOGLE_SHEET_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(record)
+        });
+
+        statusEl.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mb-5';
+        statusEl.innerHTML = '<span>✅ 구글 시트 전체 순위 등록 완료!</span>';
+      } catch (err) {
+        statusEl.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/40 mb-5';
+        statusEl.innerHTML = '<span>⚠️ 네트워크 지연으로 기기에 임시 저장됨</span>';
+      }
+    }
+
+    function endGame() {
+      gameState = 'GAMEOVER';
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+      const finalScore = Math.floor(stats.score);
+      const avgReaction = stats.reactionTimes.length > 0
+        ? Math.round(stats.reactionTimes.reduce((a, b) => a + b, 0) / stats.reactionTimes.length)
+        : null;
+      const quizRateStr = `${stats.quizCorrect} / ${stats.quizTotal}`;
+
+      const record = {
+        nickname,
+        character: `${selectedChar.emoji} ${selectedChar.name}`,
+        score: finalScore,
+        avgReaction,
+        quizRate: quizRateStr,
+        stage: stats.stage
+      };
+
+      // 로컬 백업 저장 & 구글 시트 비동기 전송
+      saveLocalBackupRecord(record);
+      sendScoreToGoogleSheet(record);
+
+      // 결과 카드 채우기
+      document.getElementById('result-player-info').textContent = `${selectedChar.emoji} ${selectedChar.name} · ${nickname}`;
+      document.getElementById('result-score').textContent = `${finalScore.toLocaleString()}점`;
+      document.getElementById('result-stage').textContent = `STAGE ${stats.stage}`;
+      document.getElementById('result-reaction').textContent = avgReaction !== null ? `${avgReaction} ms` : '기록 없음';
+      document.getElementById('result-quiz').textContent = quizRateStr;
+
+      let comment = '';
+      if (finalScore >= 2500) {
+        comment = '🔥 국가대표급 체육 인재! 뛰어난 순발력과 스포츠 지식을 모두 갖췄습니다!';
+      } else if (finalScore >= 1200) {
+        comment = '👏 훌륭한 기록입니다! 점프 감각과 스포츠 상식이 아주 탄탄하네요!';
+      } else {
+        comment = '💪 좋은 워밍업이었습니다! 2단 점프와 미션 게이트를 공략해 최고 기록에 도전해보세요!';
+      }
+      document.getElementById('result-comment').textContent = comment;
+
+      switchScreen('screen-gameover');
+    }
+
+    async function renderRankingModal() {
+      const listEl = document.getElementById('ranking-list');
+      const sourceLabel = document.getElementById('ranking-source-label');
+
+      sourceLabel.textContent = '구글 스프레드시트에서 최신 순위를 불러오는 중...';
+      listEl.innerHTML = `
+        <div class="text-center py-8 text-slate-400 text-sm animate-pulse">
+          ⏳ 실시간 순위 데이터를 불러오고 있습니다...
+        </div>
+      `;
+
+      let records = [];
+      let isFromSheet = false;
+
+      try {
+        const res = await fetch(`${GOOGLE_SHEET_API_URL}?t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === 'success' && Array.isArray(data.records)) {
+          records = data.records;
+          isFromSheet = true;
+        }
+      } catch (err) {
+        records = getLocalBackupRecords();
+      }
+
+      if (isFromSheet) {
+        sourceLabel.textContent = `✅ 구글 스프레드시트 실시간 순위 (총 ${records.length}명 기록)`;
+      } else {
+        sourceLabel.textContent = '⚠️ 오프라인 상태 — 현재 기기 저장 기록 표시 중';
+      }
+
+      if (records.length === 0) {
+        listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">아직 등록된 기록이 없습니다. 첫 번째 기록의 주인공이 되어보세요!</p>';
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉'];
+      listEl.innerHTML = '';
+
+      records.forEach((r, idx) => {
+        const rankBadge = idx < 3 ? medals[idx] : `<span class="text-slate-400 font-black text-xs w-5 inline-block text-center">${idx + 1}</span>`;
+        const isMe = nickname && r.nickname === nickname;
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between ${isMe ? 'bg-amber-400/15 border-amber-400/60' : 'bg-slate-800/90 border-slate-700'} border rounded-xl px-3.5 py-2.5`;
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-lg shrink-0">${rankBadge}</span>
+            <div class="truncate">
+              <p class="font-bold text-white text-sm truncate">${r.nickname} ${isMe ? '<span class="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded ml-1">ME</span>' : ''}</p>
+              <p class="text-[11px] text-slate-400 truncate">${r.character || ''} · 퀴즈 ${r.quizRate || '-'} · ${r.avgReaction ? r.avgReaction + 'ms' : '-'}</p>
+            </div>
+          </div>
+          <span class="font-title text-base sm:text-lg text-amber-400 shrink-0 ml-2">${Number(r.score).toLocaleString()}점</span>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    // 버튼 이벤트 바인딩
+    document.getElementById('btn-retry').addEventListener('click', startNewGame);
+    document.getElementById('btn-to-lobby').addEventListener('click', () => switchScreen('screen-lobby'));
+
+    document.getElementById('btn-open-ranking').addEventListener('click', () => {
+      document.getElementById('modal-ranking').classList.remove('hidden');
+      renderRankingModal();
+    });
+    document.getElementById('btn-result-ranking').addEventListener('click', () => {
+      document.getElementById('modal-ranking').classList.remove('hidden');
+      renderRankingModal();
+    });
+    document.getElementById('btn-refresh-ranking').addEventListener('click', () => {
+      renderRankingModal();
+    });
+    document.getElementById('btn-close-ranking').addEventListener('click', () => {
+      document.getElementById('modal-ranking').classList.add('hidden');
+    });
+    document.getElementById('btn-close-ranking-bottom').addEventListener('click', () => {
+      document.getElementById('modal-ranking').classList.add('hidden');
+    });
+
+    // 초기 실행
+    initLobby();
+  </script>
+</body>
+</html>
